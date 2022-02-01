@@ -1,6 +1,6 @@
 @extends('master')
 
-@section('edit')
+@section('content')
     <div class="content-wrapper">
         <div class="card">
             <div class="card-body ml-2 mr-2">

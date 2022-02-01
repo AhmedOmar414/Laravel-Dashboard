@@ -13,9 +13,6 @@
 <div class="wrapper">
 
     <!-- Preloader -->
-    <div class="preloader flex-column justify-content-center align-items-center">
-        <img class="animation__shake" src="{{url('dashboard')}}/dist/img/AdminLTELogo.png" alt="AdminLTELogo" height="60" width="60">
-    </div>
 
     <!-- Navbar -->
 @include('layouts.dashboard._nav')
@@ -26,10 +23,6 @@
 
 <!-- Content Wrapper. Contains page content -->
 @yield('content')
-@yield('users')
-@yield('create')
-@yield('edit')
-
 <!-- /.content-wrapper -->
 
 {{--    footer starts here --}}
