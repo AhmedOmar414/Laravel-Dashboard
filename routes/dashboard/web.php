@@ -34,8 +34,12 @@ Route::middleware('auth')->prefix('dashboard/')->name('dashboard.')->group(funct
     });
 
     //categories routes
-    Route::resource('categories',CategoryController::class);
+    Route::resource('categories',CategoryController::class)->except('show');
+    Route::get('category/search',[CategoryController::class,'search'])->name('category.search');
+    Route::get('product/show_related_products/{id}',[ProductController::class,'ShowRelatedProducts'])->name('product.show_related');
 
     //products routes
     Route::resource('products',ProductController::class);
+    Route::get('product/search',[ProductController::class,'search'])->name('product.search');
+    Route::get('product/search_category',[ProductController::class,'SearchWithCategory'])->name('product.search_category');
 });

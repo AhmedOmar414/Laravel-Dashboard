@@ -7,23 +7,37 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use ProtoneMedia\LaravelCrossEloquentSearch\Search;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class UsersController extends Controller
 {
-    //Retrieve all users data from the database
+    public function __construct()
+    {
+        $this->middleware(['role:Administrator'])->only('destroy');
+        $this->middleware(['role:Administrator|Super_Admin'])->only('create','store','edit','update');
+    }
+
     public function index()
     {
-        $users = User::all();
-        return view('dashboard.users.index',compact('users'));
-    }//end of index
+            $users = User::role(['Admin','Super_Admin'])->get();
+            return view('dashboard.users.index',compact('users'));
+    }
 
-    //Show the form for creating user
+
+    public function search(Request $request){
+        $query = $request->get('query');
+        $users = Search::add(User::role(['Admin','Super_Admin']),['first_name','last_name'])->get($query);
+        return view('dashboard.users.index',compact(['users','query']));
+    }
+
+
     public function create()
     {
        return view('dashboard.users.create');
-    }//end of create
+    }
 
-    //Store the created user data to the database
     public function store(Request $request)
     {
         $request->validate([
@@ -31,33 +45,38 @@ class UsersController extends Controller
             'last_name'=>['required','max:50'],
             'email'=>['required','email','unique:users'],
             'password'=>'required|confirmed|min:8',
+            'role'=>['required'],
+            'image'=>'mimes:jpeg,jpg,png|max:2048',
         ]);
 
         $data = $request->all();
-        User::create([
-            'first_name'=>$data['first_name'],
-            'last_name'=>$data['last_name'],
-            'email'=>$data['email'],
-            'password'=>Hash::make($data['password']),
-        ]);
+        $user = new User;
+        if ($request->file('image')){
+            $image = $request->file('image');
+            $extention = $image->getClientOriginalExtension();
+            $image_name = time().'.'.$extention;
+            $image->move('uploads/user_images',$image_name);
+            $user->image_url = $image_name;
+        }
+
+        $user->first_name = $data['first_name'];
+        $user->last_name = $data['last_name'];
+        $user->email = $data['email'];
+        $user->password = Hash::make($data['password']);
+
+        $user->assignRole($request->role);
+        $user->save();
 
         return redirect('dashboard/users/index')->with('status','User Created successfully');
-    }//end of store
-
-
-    public function show($id)
-    {
     }
 
-    //Show the edit users form
     public function edit($id)
     {
         $data = DB::table('users')->where('id',$id)->first();
         return view('dashboard.users.edit',compact('data'));
-    }//end of edit
+    }
 
 
-    //Update specific user data
     public function update(Request $request,$id)
     {
         $request->validate([
@@ -83,6 +102,7 @@ class UsersController extends Controller
     public function destroy($id)
     {
         $user = User::find($id);
+        unlink("uploads/user_images/".$user->image_url);
         $user->delete();
 
         return redirect()->back()->with('del','user deleted successfully');
